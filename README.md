@@ -142,9 +142,14 @@ Export statistics of 6 character postal code groups (e.g. 1000AA). ~10s
 
 ### [convert_to_iceberg.py](convert_to_iceberg.py)
 Converts the SQLite database to [Apache Iceberg](https://iceberg.apache.org/) tables using DuckDB (the `duckdb` package is
-needed). Every table becomes a folder in `output/iceberg` (see `dir_iceberg` in [config.py](config.py)) with Parquet data
-files and Iceberg metadata. A full database takes about 15 seconds. Read them with DuckDB:
-`SELECT * FROM iceberg_scan('output/iceberg/adressen')`.
+needed). The tables get Parquet data files and Iceberg metadata, and are organized in medallion layers in `output/iceberg`
+(see `dir_iceberg` in [config.py](config.py)). A full database takes about 20 seconds.
+* bronze: the raw BAG XML in `input/bag.zip` (not converted).
+* `silver/`: the parsed and cleaned BAG tables and the reference tables (gemeenten, provincies).
+* `gold/`: `adressen` and the postcode statistics `postcode4_stats`, `postcode5_stats` and `postcode6_stats`.
+* `metadata/`: `bag_info`.
+
+Read them with DuckDB: `SELECT * FROM iceberg_scan('output/iceberg/gold/adressen')`.
 
 -i, --input  
 SQLite database to convert (default: `file_db_sqlite` in config.py)
