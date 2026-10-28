@@ -3,10 +3,11 @@
 /temp_xml
 /scratch
 /venv/
-/input/bag.zip
+/input/*.zip
 /output/
 /temp.py
 __pycache__/
 *.py[cod]
 *$py.class
 *.__pycache__
+.DS_Store

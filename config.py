@@ -31,7 +31,7 @@ except locale.Error:
     locale.setlocale(locale.LC_ALL, '')
 
 # Location of the BAG zip file downloaded from kadaster. See README.md
-file_bag = 'input/bag.zip'
+file_bag = 'input/lvbag-extract-nl.zip'
 
 # Location of the gemeenten file downloaded from cbs.nl. See README.md
 file_gemeenten = 'input/gemeenten.csv'
@@ -53,7 +53,7 @@ active_only = True
 # If an adressen table is created some BAG tables are no longer needed and can be deleted:
 # nummers, panden, verblijfsobjecten, ligplaatsen and standplaatsen. Set to False if you want to keep these tables.
 # You can also delete these tables afterward using the utils_sqlite_shrink.py script.
-delete_no_longer_needed_bag_tables = True
+delete_no_longer_needed_bag_tables = False
 
 # Public spaces with names longer than 24 characters also have a shortened name. Set to true to make short names the
 # default if available.

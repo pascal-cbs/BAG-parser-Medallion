@@ -39,7 +39,7 @@ databases.
 There are several settings you can tweak in the [config.py](config.py).
 
 ## Requirements
-* Python 3.11 or newer.
+* uv https://docs.astral.sh/uv/.
 * The `pyproj` package. Recommended. It converts the BAG coordinates (Rijksdriehoekscoördinaten) to latitude and longitude (ETRS89 or WGS84, see [Coordinates](#coordinates)) with high accuracy. The parser also needs the grid file in the [proj](proj) folder. It is included, so you don't have to download anything.
   Without `pyproj` the parser still works, but it shows a warning and the coordinates are less accurate, see [Without pyproj](#without-pyproj).
   The `WGS84` coordinates option needs `pyproj`.
@@ -50,48 +50,30 @@ There are several settings you can tweak in the [config.py](config.py).
 ## Installation
 You only have to do this once. This parser runs without additional packages. Steps 3 to 5 are optional install `pyproj`, 
 which is not needed but provides the most accurate coordinates, see [Requirements](#requirements).
-1. Install [Python](https://www.python.org/downloads/) 3.11 or newer.
+1. Install uv
 2. Download the BAG parser. Using git is recommended as updates are easier:
    ```
    git clone https://github.com/digitaldutch/BAG_parser
    ```
 3. Open a terminal in the BAG parser folder and create a virtual environment (recommended):
    ```
-   python -m venv .venv
+   uv init
    ```
    (PyCharm and other editors can create this environment for you.)
-4. Activate the virtual environment. On Windows:
-   ```
-   .venv\Scripts\activate
-   ```
-   On Linux and macOS:
-   ```
-   source .venv/bin/activate
-   ```
-5. Install the recommended packages:
-   ```
-   pip install -r requirements.txt
-   ```
+
 
 ## Running the parser
 Do this each time you want a new SQLite database, for example, when there is a new BAG release.
 1. Open a terminal in the BAG parser folder and activate the virtual environment (see Installation, step 4).
    You have to do this in every new terminal. PyCharm and other editors do this automatically.
-2. Optional: update the BAG parser to the latest version and install new requirements if there are any.
-   The parser tells you at startup if a newer version is available. It checks this with one web request to GitHub.
-   Set `check_for_updates = False` in [config.py](config.py) to turn this off.
-   ```
-   git pull https://github.com/digitaldutch/BAG_parser
-   pip install -r requirements.txt
-   ```
-3. Download the BAG (3 GB) from [kadaster.nl](https://www.kadaster.nl/-/gratis-download-bag-extract)
+2. Download the BAG (3 GB) from [kadaster.nl](https://www.kadaster.nl/-/gratis-download-bag-extract)
    or directly from [pdok.nl](https://service.pdok.nl/kadaster/adressen/atom/v1_0/downloads/lvbag-extract-nl.zip)
-   and save the file as `bag.zip` in the `input` folder. Replace the old file if there is one.
+   and save the file in the `input` folder. Replace the old file if there is one.
 4. The [gemeenten.csv](input/gemeenten.csv) file is already included in the `input` folder, but you can [download the latest version from the CBS website](https://www.cbs.nl/nl-nl/onze-diensten/methoden/classificaties/overig/gemeentelijke-indelingen-per-jaar). Save it as `gemeenten.csv` in the input folder.
 5. Set your options in [config.py](config.py). The defaults are fine to start with.
 6. Run the importer:
    ```
-   python import_bag.py
+   uv run import_bag.py
    ```
 7. Drink a cup of coffee for a few minutes ☕😎 while watching the progress bar.
 8. Open the SQLite database (`output/bag.sqlite`) with your favorite tool. I like [DBeaver](https://dbeaver.io/).
