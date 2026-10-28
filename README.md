@@ -140,6 +140,21 @@ Export statistics of 5 character postal code groups (e.g. 1000A). ~10s
 -p6, --postcode6  
 Export statistics of 6 character postal code groups (e.g. 1000AA). ~10s
 
+### [convert_to_iceberg.py](convert_to_iceberg.py)
+Converts the SQLite database to [Apache Iceberg](https://iceberg.apache.org/) tables using DuckDB (the `duckdb` package is
+needed). Every table becomes a folder in `output/iceberg` (see `dir_iceberg` in [config.py](config.py)) with Parquet data
+files and Iceberg metadata. A full database takes about 15 seconds. Read them with DuckDB:
+`SELECT * FROM iceberg_scan('output/iceberg/adressen')`.
+
+-i, --input  
+SQLite database to convert (default: `file_db_sqlite` in config.py)
+
+-o, --output  
+Output folder (default: `dir_iceberg` in config.py)
+
+-t, --tables  
+Only convert these tables, for example `-t adressen gemeenten`
+
 ### [validate_coordinates.py](validate_coordinates.py)
 Validates the conversion of the Rijksdriehoekscoördinaten against the official GNSS stations of the Kadaster
 ([RDinfo](https://api.pdok.nl/kadaster/rdinfo/ogc/v1), open data on PDOK). It downloads about 440 stations (6.7 MB), converts

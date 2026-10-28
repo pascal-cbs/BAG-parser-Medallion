@@ -2,8 +2,8 @@ import importlib.util
 import locale
 import os
 
-version = 113
-version_date = '12 October 2026'
+version = 114
+version_date = '28 October 2026'
 
 # At startup the parser checks if a newer version is available on GitHub.
 check_for_updates = True
@@ -38,6 +38,9 @@ file_gemeenten = 'input/gemeenten.csv'
 
 # Output SQLite database with parsed BAG
 file_db_sqlite = 'output/bag.sqlite'
+
+# Output folder of convert_to_iceberg.py. Every SQLite table becomes an Iceberg table in a subfolder.
+dir_iceberg = 'output/iceberg'
 
 # Log-file containing progress, warnings and error messages. This info is also written to the console.
 file_log = 'output/bag_importer.log'

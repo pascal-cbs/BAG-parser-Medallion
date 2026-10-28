@@ -1,5 +1,11 @@
 # Changelog
 
+## V114 - 28 October 2026
+* New script `convert_to_iceberg.py`: converts all tables of the SQLite database to Apache Iceberg tables (Parquet data files)
+  using DuckDB. Options `-i` (input database), `-o` (output folder, default `dir_iceberg` in config.py: `output/iceberg`)
+  and `-t` (only these tables). Empty strings in numeric columns become NULL.
+* New dependency `duckdb` (only needed for this script).
+
 ## V113 - 12 October 2026
 * Readme updates.
 
