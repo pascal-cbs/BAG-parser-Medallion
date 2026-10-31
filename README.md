@@ -55,12 +55,6 @@ which is not needed but provides the most accurate coordinates, see [Requirement
    ```
    git clone https://github.com/digitaldutch/BAG_parser
    ```
-3. Open a terminal in the BAG parser folder and create a virtual environment (recommended):
-   ```
-   uv init
-   ```
-   (PyCharm and other editors can create this environment for you.)
-
 
 ## Running the parser
 Do this each time you want a new SQLite database, for example, when there is a new BAG release.
