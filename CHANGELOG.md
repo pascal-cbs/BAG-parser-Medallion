@@ -1,5 +1,12 @@
 # Changelog
 
+## V115 - 28 October 2026
+* convert_to_iceberg.py organizes the Iceberg tables in medallion layers: `silver/` (parsed and cleaned BAG tables and
+  reference data), `gold/` (`adressen`) and `metadata/` (`bag_info`). The raw BAG XML in `input/bag.zip` is the bronze layer.
+* New gold tables `postcode4_stats`, `postcode5_stats` and `postcode6_stats` (same content as the CSV exports), calculated
+  from the Iceberg `adressen` and `woonplaatsen` tables.
+* Breaking: tables are no longer saved directly in `output/iceberg/`. Delete the old table folders there.
+
 ## V114 - 28 October 2026
 * New script `convert_to_iceberg.py`: converts all tables of the SQLite database to Apache Iceberg tables (Parquet data files)
   using DuckDB. Options `-i` (input database), `-o` (output folder, default `dir_iceberg` in config.py: `output/iceberg`)

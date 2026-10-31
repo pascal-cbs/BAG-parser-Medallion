@@ -6,12 +6,13 @@ from argparse import ArgumentParser
 import config
 import utils
 
-parser = ArgumentParser(description='Convert the tables of the SQLite database to Apache Iceberg tables using DuckDB')
+parser = ArgumentParser(description='Convert the tables of the SQLite database to Apache Iceberg tables using DuckDB, '
+                                    'organized in medallion layers (silver and gold)')
 
 helpText = f"SQLite database to convert (default: {config.file_db_sqlite})"
 parser.add_argument('-i', '--input', default=config.file_db_sqlite, help=helpText)
 
-helpText = f"Output folder. Every table becomes a subfolder (default: {config.dir_iceberg})"
+helpText = f"Output folder. Tables are saved in layer/table subfolders (default: {config.dir_iceberg})"
 parser.add_argument('-o', '--output', default=config.dir_iceberg, help=helpText)
 
 helpText = "Only convert these tables (default: all tables)"
@@ -51,6 +52,23 @@ if unknown_tables:
     utils.print_log_error(f"Tables not found in {args.input}: {', '.join(unknown_tables)}")
     raise SystemExit(1)
 
+# Medallion layer per table. The raw BAG XML (input/bag.zip) is the bronze layer. These tables are already parsed, cleaned
+# and typed (silver). 'adressen' is the denormalized data product (gold). bag_info is lineage metadata. Unlisted tables
+# go to silver.
+layers = {
+    'bag_info': 'metadata',
+    'adressen': 'gold',
+}
+default_layer = 'silver'
+
+# Gold aggregates, calculated from the Iceberg tables of the layers below.
+# SQLite's SUBSTR(postcode, 0, 5) is the same as LEFT(postcode, 4). MIN(woonplaats) makes the result deterministic.
+gold_postcode_stats = {
+    'postcode4_stats': 'LEFT(a.postcode, 4)',
+    'postcode5_stats': 'LEFT(a.postcode, 5)',
+    'postcode6_stats': 'a.postcode',
+}
+
 duckdb_types = {'INTEGER': 'BIGINT', 'FLOAT': 'DOUBLE'}
 db_sqlite = sqlite3.connect(f'file:{args.input}?mode=ro', uri=True)
 
@@ -65,16 +83,46 @@ def select_columns(table):
 
 os.makedirs(args.output, exist_ok=True)
 
+
+def table_folder(table):
+    return os.path.join(args.output, layers.get(table, default_layer), table)
+
+
+def write_iceberg(select_sql, folder):
+    # An Iceberg table folder can't be overwritten, so start with an empty folder
+    shutil.rmtree(folder, ignore_errors=True)
+    os.makedirs(os.path.dirname(folder), exist_ok=True)
+    con.execute(f"COPY ({select_sql}) TO '{folder}' (FORMAT iceberg)")
+
+
 for table in tables:
-    folder = os.path.join(args.output, table)
+    folder = table_folder(table)
     count = con.execute(f'SELECT COUNT(*) FROM bag."{table}"').fetchone()[0]
     if count == 0:
         utils.print_log(f"Skip {table}: no records")
         continue
 
     utils.print_log(f"Convert {table}: {count:n} records")
-    # An Iceberg table folder can't be overwritten, so start with an empty folder
-    shutil.rmtree(folder, ignore_errors=True)
-    con.execute(f'COPY (SELECT {select_columns(table)} FROM bag."{table}") TO \'{folder}\' (FORMAT iceberg)')
+    write_iceberg(f'SELECT {select_columns(table)} FROM bag."{table}"', folder)
+
+if not args.tables or 'adressen' in args.tables:
+    folder_adressen = table_folder('adressen')
+    folder_woonplaatsen = table_folder('woonplaatsen')
+    if os.path.isdir(folder_adressen) and os.path.isdir(folder_woonplaatsen):
+        for name, postcode_expression in gold_postcode_stats.items():
+            utils.print_log(f"Create gold table {name}")
+            write_iceberg(f"""
+                SELECT
+                  {postcode_expression}  AS {name.split('_')[0]},
+                  AVG(a.latitude)        AS center_lat,
+                  AVG(a.longitude)       AS center_lon,
+                  COUNT(1)               AS aantal_adressen,
+                  MIN(w.naam)            AS woonplaats
+                FROM iceberg_scan('{folder_adressen}') a
+                  LEFT JOIN iceberg_scan('{folder_woonplaatsen}') w ON a.woonplaats_id = w.id
+                WHERE a.postcode <> ''
+                GROUP BY 1""", os.path.join(args.output, 'gold', name))
+    else:
+        utils.print_log_warning("Postcode statistics skipped: the adressen and woonplaatsen tables are needed")
 
 utils.print_log(f"Ready: Iceberg tables saved in {args.output}")
