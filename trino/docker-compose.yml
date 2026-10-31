@@ -1,0 +1,42 @@
+# Local Trino test server for convert_to_trino.py: Trino with an Iceberg catalog (REST catalog, data files in SeaweedFS).
+# Start: docker compose -f trino/docker-compose.yml up -d
+# Trino Web UI: http://localhost:8080. The data files are in SeaweedFS (S3 at http://localhost:8333).
+# The REST catalog keeps the table list in memory: after restarting the rest container the tables are gone from Trino.
+services:
+  trino:
+    image: trinodb/trino
+    container_name: trino
+    ports: ["8080:8080"]
+    volumes:
+      # Adds the iceberg catalog to the default catalogs of the image (memory, tpch, ...)
+      - ./iceberg.properties:/etc/trino/catalog/iceberg.properties
+    depends_on: [rest, seaweedfs]
+
+  rest:
+    image: apache/iceberg-rest-fixture
+    environment:
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
+      AWS_REGION: us-east-1
+      CATALOG_WAREHOUSE: s3://warehouse/
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      CATALOG_S3_ENDPOINT: http://seaweedfs:8333
+      CATALOG_S3_PATH__STYLE__ACCESS: "true"
+
+  # S3 storage for the Iceberg data files. SeaweedFS without S3 credentials configured accepts any access key.
+  seaweedfs:
+    image: chrislusf/seaweedfs
+    command: server -dir=/data -s3 -s3.port=8333
+    ports: ["8333:8333"]
+    volumes:
+      - seaweedfs-data:/data
+
+  # Creates the 'warehouse' bucket once
+  create-bucket:
+    image: chrislusf/seaweedfs
+    depends_on: [seaweedfs]
+    entrypoint: >
+      sh -c "until echo 's3.bucket.create -name warehouse' | weed shell -master=seaweedfs:9333 2>&1 | grep -qiE 'created|exist'; do sleep 2; done"
+
+volumes:
+  seaweedfs-data:

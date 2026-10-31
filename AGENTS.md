@@ -14,6 +14,8 @@ without asking. See [README.md](README.md).
 * `test_sqlite_db.py` - data sanity checks on the generated SQLite database (run after an import; not a unit-test suite).
 * `validate_coordinates.py` - validates the RD to latitude/longitude conversion against official Kadaster GNSS stations (RDinfo).
 * `validate_coordinates_with_pdok.py` - compares RD positions of addresses in the database with the PDOK BAG API.
+* `convert_to_iceberg.py`, `convert_to_trino.py` - convert the SQLite database to Iceberg tables (DuckDB) or send it to Trino, in medallion layers.
+* `trino/` - Docker Compose setup of a local Trino test server (Iceberg REST catalog, SeaweedFS) for `convert_to_trino.py`.
 * `config.py` - user options, plus `version` and `version_date`.
 * `bag/` - XML parsers (`bag_parser.py`, `gemeente_parser.py`) and RD to latitude/longitude conversion (`coordinates.py`, uses pyproj, or `rijksdriehoek.py` if pyproj is missing).
 * `proj/` - the RDNAPTRANS2018 grid file (CC BY 4.0, see `proj/README.txt`) that makes the conversion accurate. Do not remove it.

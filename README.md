@@ -154,6 +154,44 @@ Output folder (default: `dir_iceberg` in config.py)
 -t, --tables  
 Only convert these tables, for example `-t adressen gemeenten`
 
+### [convert_to_trino.py](convert_to_trino.py)
+Sends the tables of the SQLite database to a [Trino](https://trino.io/) server (the `trino` package is needed). The tables
+are created in the same medallion layers as convert_to_iceberg.py, as schemas `silver`, `gold` and `metadata` in a Trino
+catalog. Use an Iceberg catalog: the script then merges the data files of each table (`optimize`). The postcode statistics
+are calculated by Trino. Existing tables are replaced.
+The server settings are in [config.py](config.py) (`trino_host`, `trino_port`, `trino_catalog`, ...). Set a password in the
+`TRINO_PASSWORD` environment variable (needs `--http-scheme https`).
+The records are sent as INSERT statements of at most `trino_max_query_length` characters, so a full database takes a while
+(about 75 million records). Use `-t` to send only the tables you need.
+
+Query them in Trino: `SELECT * FROM iceberg.gold.adressen`.
+
+For local testing, [trino/docker-compose.yml](trino/docker-compose.yml) starts a Trino server with an Iceberg catalog
+(REST catalog, data files in SeaweedFS S3 storage) that matches the defaults in config.py. It needs Docker:
+```
+docker compose -f trino/docker-compose.yml up -d
+uv run python convert_to_trino.py
+```
+Trino has a web UI at http://localhost:8080 and a SQL shell: `docker exec -it trino trino`. The data files are in SeaweedFS (S3 at
+http://localhost:8333). The REST catalog keeps its table list in memory, so after a restart the tables
+are gone from Trino. Send them again. For a quick test without Iceberg, use the memory catalog of the Trino image:
+`-c memory -t gemeenten provincies woonplaatsen` (small tables only, it keeps about 128 MB).
+
+-i, --input  
+SQLite database to send (default: `file_db_sqlite` in config.py)
+
+-t, --tables  
+Only send these tables, for example `-t adressen woonplaatsen`
+
+-c, --catalog  
+Trino catalog (default: `trino_catalog` in config.py)
+
+--host, --port, --user, --http-scheme  
+Trino server (defaults in config.py)
+
+-w, --workers  
+Number of INSERT statements sent at the same time (default: `trino_workers` in config.py)
+
 ### [validate_coordinates.py](validate_coordinates.py)
 Validates the conversion of the Rijksdriehoekscoördinaten against the official GNSS stations of the Kadaster
 ([RDinfo](https://api.pdok.nl/kadaster/rdinfo/ogc/v1), open data on PDOK). It downloads about 440 stations (6.7 MB), converts

@@ -2,8 +2,8 @@ import importlib.util
 import locale
 import os
 
-version = 115
-version_date = '28 October 2026'
+version = 116
+version_date = '31 October 2026'
 
 # At startup the parser checks if a newer version is available on GitHub.
 check_for_updates = True
@@ -41,6 +41,48 @@ file_db_sqlite = 'output/bag.sqlite'
 
 # Output folder of convert_to_iceberg.py. The Iceberg tables are saved in medallion layer subfolders: silver, gold and metadata.
 dir_iceberg = 'output/iceberg'
+
+# Medallion layer per table, used by convert_to_iceberg.py and convert_to_trino.py. The raw BAG XML (input/bag.zip) is the
+# bronze layer. The parsed, cleaned and typed tables are silver. 'adressen' is the denormalized data product (gold).
+# bag_info is lineage metadata. Unlisted tables go to medallion_default_layer.
+medallion_layers = {
+    'bag_info': 'metadata',
+    'adressen': 'gold',
+}
+medallion_default_layer = 'silver'
+
+# Trino server used by convert_to_trino.py. The tables are created in the catalog below, in a schema per medallion layer
+# (silver, gold and metadata). Use an Iceberg catalog. A password can be set in the TRINO_PASSWORD environment variable
+# (needs https).
+trino_host = 'localhost'
+trino_port = 8080
+trino_http_scheme = 'http'
+trino_user = 'bag'
+trino_catalog = 'iceberg'
+
+# How convert_to_trino.py sends the records:
+# 's3' (fast):  DuckDB writes the tables as Parquet files directly to the S3 storage of the Iceberg catalog, in the folder of
+#               each table. Trino adds these files to the table (add_files procedure, needs
+#               iceberg.add-files-procedure.enabled=true in the catalog properties). Needs access to that storage, see below.
+# 'insert':     INSERT statements with the records. Works with any catalog and without access to the storage, but it is slow:
+#               Trino has to parse every record (about 5,000 records per second).
+trino_method = 's3'
+
+# S3 storage of the Iceberg catalog, as seen from this computer (method 's3'). The defaults are for trino/docker-compose.yml.
+# The keys can also be set in the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables.
+trino_s3_endpoint = 'localhost:8333'
+trino_s3_use_ssl = False
+trino_s3_url_style = 'path'
+trino_s3_region = 'us-east-1'
+trino_s3_access_key = 'admin'
+trino_s3_secret_key = 'password'
+
+# Method 'insert': maximum length of a Trino query (query.max-length on the server, default 1,000,000 characters).
+# Records are sent in INSERT statements of at most this length.
+trino_max_query_length = 1_000_000
+
+# Method 'insert': number of INSERT statements that convert_to_trino.py sends at the same time.
+trino_workers = 4
 
 # Log-file containing progress, warnings and error messages. This info is also written to the console.
 file_log = 'output/bag_importer.log'

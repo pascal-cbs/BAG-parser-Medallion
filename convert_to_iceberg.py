@@ -52,14 +52,8 @@ if unknown_tables:
     utils.print_log_error(f"Tables not found in {args.input}: {', '.join(unknown_tables)}")
     raise SystemExit(1)
 
-# Medallion layer per table. The raw BAG XML (input/bag.zip) is the bronze layer. These tables are already parsed, cleaned
-# and typed (silver). 'adressen' is the denormalized data product (gold). bag_info is lineage metadata. Unlisted tables
-# go to silver.
-layers = {
-    'bag_info': 'metadata',
-    'adressen': 'gold',
-}
-default_layer = 'silver'
+layers = config.medallion_layers
+default_layer = config.medallion_default_layer
 
 # Gold aggregates, calculated from the Iceberg tables of the layers below.
 # SQLite's SUBSTR(postcode, 0, 5) is the same as LEFT(postcode, 4). MIN(woonplaats) makes the result deterministic.

@@ -1,5 +1,14 @@
 # Changelog
 
+## V116 - 31 October 2026
+* New script `convert_to_trino.py`: sends the tables of the SQLite database to a Trino server, in the schemas `silver`, `gold`
+  and `metadata` of a Trino catalog (default `iceberg`). The gold postcode statistics are calculated by Trino. Options `-i`,
+  `-t`, `-c` (catalog), `--host`, `--port`, `--user`, `--http-scheme` and `-w` (parallel INSERT statements). Server settings
+  are in config.py, a password in the `TRINO_PASSWORD` environment variable.
+* The medallion layer per table is now in config.py (`medallion_layers`), shared by convert_to_iceberg.py and convert_to_trino.py.
+* New dependency `trino` (only needed for this script).
+* New `trino/docker-compose.yml`: a local Trino test server with an Iceberg catalog (REST catalog and SeaweedFS). See the readme.
+
 ## V115 - 28 October 2026
 * convert_to_iceberg.py organizes the Iceberg tables in medallion layers: `silver/` (parsed and cleaned BAG tables and
   reference data), `gold/` (`adressen`) and `metadata/` (`bag_info`). The raw BAG XML in `input/bag.zip` is the bronze layer.

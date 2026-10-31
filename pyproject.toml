@@ -6,4 +6,5 @@ dependencies = [
     "duckdb>=2.0.0",
     "psutil>=7.2.2",
     "pyproj>=3.8.0",
+    "trino>=0.340.0",
 ]
